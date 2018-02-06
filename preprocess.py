@@ -3,10 +3,9 @@
 import pandas as pd
 import numpy as np
 import concurrent.futures
-import urllib
+import pymongo as pm
 import re
 import random
-import json
 
 class AccessingData:
     def __init__(self,data):
@@ -33,29 +32,46 @@ class AccessingData:
         return userNum
 
     def getSite(self):
-        userIps = list(self.rawData['userip'].dropna().values)
-        sampleIps = random.sample(userIps,len(userIps)//20)
-        countryDict,cityDict = dict(),dict()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            future_to_url = {executor.submit(self._urlOpen, url): url for url in sampleIps}
+        userIps = list(self.rawData[self.rawData['method'] == 'GET']['userip'].dropna().values)
+        sampleIps = random.sample(userIps,len(userIps)//100)
+        #print(sampleIps)
+        regionDict,cityDict = dict(),dict()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_url = {executor.submit(self._getLocation, ip): ip for ip in sampleIps}
             for key in future_to_url.keys():
                 try:
                     site = key.result()
-                    if site['country_name'] in countryDict.keys():
-                        countryDict[site['country_name']] = countryDict[site['country_name']] + 1
+                    if site['country'] in regionDict.keys():
+                        regionDict[site['country']] = regionDict[site['country']] + 1
                     else:
-                        countryDict[site['country_name']] = 1
+                        regionDict[site['country']] = 1
 
-                    if site['region_name'] in cityDict.keys():
-                        cityDict[site['region_name']] = cityDict[site['region_name']] + 1
+                    if site['city'] in cityDict.keys():
+                        cityDict[site['city']] = cityDict[site['city']] + 1
                     else:
-                        cityDict[site['region_name']] = 1
+                        cityDict[site['city']] = 1
                 except:
                     pass
-        cityDict.pop('')
+        try:
+            cityDict.pop('')
+        except:
+            pass
 
-        return countryDict,cityDict
+        return regionDict,cityDict
 
+    def _getLocation(self,ip):
+        client = pm.MongoClient('mongodb://jizhi:pwd123@127.0.0.1:27017/ip_location')
+        db = client.ip_location
+        col = db.ip_location
+        ip = ip.split(':')[-1]
+        intIp = int(ip.split('.')[0]) * pow(256, 3) + int(ip.split('.')[1]) * pow(256, 2) + int(ip.split('.')[2]) * pow(
+            256, 1) + int(ip.split('.')[3]) * pow(256, 0)
+        for i in col.aggregate([{'$match': {'ipStart': {'$lte': intIp}, 'ipEnd': {'$gte': intIp}}},
+                                {'$project': {'_id': 0, 'country': 1, 'city': 1}}]):
+
+            return i
+
+    '''
     def _urlOpen(self,ip):
         ip = ip.split(':')[-1]
         url = 'http://freegeoip.net/json/' + ip
@@ -66,14 +82,16 @@ class AccessingData:
             response = urllib.request.urlopen(url, timeout=2)
             html = response.read()
             siteDict = json.loads(html, encoding='utf-8')
+            print(siteDict)
             return siteDict
         except:
             print('URLERROR')
 
         #print(html)
+    '''
 
     def getAccessDevice(self):
-        useragents = self.rawData['useragent'].dropna().values
+        useragents = self.rawData[self.rawData['method'] == 'GET']['useragent'].dropna().values
         count = np.zeros(8)
         for useragent in useragents:
             while True:
@@ -116,7 +134,7 @@ class AccessingData:
         for url in baseurls:
             try:
                 url = url.split('/')[2]
-                if url.split('.')[-1] == 'cn' and url.split('.')[-2] == 'com':
+                if url.split('.')[-2] == 'com':
                     url = url.split('.')[-3]
                 else:
                     url = url.split('.')[-2]
@@ -129,7 +147,7 @@ class AccessingData:
                 print(url)
         dropKey = []
         for key in source.keys():
-            if len(key) <2 or key[0]<'9':
+            if len(key) <3 or key[0]<'9':
                 dropKey.append(key)
         for key in dropKey:
             source.pop(key)
