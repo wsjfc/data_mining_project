@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html>
+  <style>
+    #showDiv1,#showDiv2
+    {
+      background-color:#d0e4fe;
+      text-align:center;
+      border-style: groove;
+      border-width: 5px;
+      border-style: red;
+      height: 50px;
+      width: 80px;
+      border-radius: 8px;
+    }
+    #btn_submit1,#btn_submit2,#btn_submit3
+    {
+      background-color:#b9a0ff52;
+      text-align:center;
+      border-style: groove;
+      border-width: 5px;
+      border-style: rgba(255, 255, 0, 0.253);
+      border-radius: 6px;
+    }
+  </style>
+  <title>测试</title>
+    <head>
+        <meta charset="utf-8">
+        <title>ECharts</title>
+        <!-- 引入 外部js包 -->
+        <script src="http://echarts.baidu.com/dist/echarts.js"></script>
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+        <script type="text/javascript">
+          //日期格式转化
+          var formatDateTime = function (date){
+            var y = date.getFullYear();  
+            var m = date.getMonth() + 1;  
+            m = m < 10 ? ('0' + m) : m;  
+            var d = date.getDate();  
+            d = d < 10 ? ('0' + d) : d;  
+            var h = date.getHours();  
+            var minute = date.getMinutes();  
+            minute = minute < 10 ? ('0' + minute) : minute;  
+            return y + '-' + m + '-' + d+' '+h+':'+minute;  
+            };  
+          function dateFormatChange(rawdata){
+            var newdata = []
+            for (index in rawdata){
+              //window.alert(typeof(new Date(r3195185awdata[index])))
+              newdata.push(formatDateTime(new Date(rawdata[index])))
+            }
+            return newdata
+            }
+          
+          //绘制echarts
+          function plotChart(interval,chartType,keyword,divId,titleContent){
+              //从api中读取数据
+              echarts.dispose(document.getElementById(divId))
+              //if (myChart != null && myChart != "" && myChart != undefined){myChart.dispose();}  
+              var myChart = echarts.init(document.getElementById(divId))
+              //window.alert(myChart) 
+              var form = new FormData();
+              form.append("interval", interval);
+              form.append("keyword", keyword);
+              form.append("chartType",chartType)
+
+              var settings = {
+                type: "POST",
+                async: true,
+                crossDomain: true,
+                url: "http://localhost:5000/stata",
+                processData: false,
+                contentType: false,
+                mimeType: "multipart/form-data",
+                data: form,
+                dataType: "json"
+              }
+              //异步数据加载 
+              jQuery.noConflict();   //执行完毕后移交控制权
+              jQuery(function($){
+                $.ajax(settings).done(function (data) {
+                  // 填入数据
+                  //window.alert((data.accessTime))
+                  myChart.setOption({
+                    tooltip : {
+                      trigger: 'axis',
+                        axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                          type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                        }
+                    },
+                    legend: { data: data.legend
+                    },
+                    xAxis: {
+                      data: data.accessTime,
+                    },
+                    yAxis: {},
+                    series: 
+                      data.data
+                    });
+                  });
+                });
+              }
+
+          //设置点击buttun切换div
+          function showHidden(obj) {          
+          　　if(obj.style.display == 'none') {
+          　　 obj.style.display = 'block';
+          　　} 
+          }
+          function hidden(obj) {          
+          　　if(obj.style.display == 'block') {
+          　　 obj.style.display = 'none';
+          　　} 
+          }
+        </script>
+    </head>
+    <body>
+        <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+        <tilte><center><h1>示例</h1></center></tilte>
+        <button type='button' id='showDiv1' style="margin-left:600px">每小时</button>
+        <button type='button' id='showDiv2'>每天</button>
+        <!-- div1 -->
+        <div id ='div1' style="display:block">
+          <center><div id="main11" style="width: 800px;height:400px;"></div></center>
+          <script>
+            plotChart('hour','line','uniqUserNum','main11','分时段独立用户数');
+            //setInterval(function () {plotChart('hour','line','uniqUserNum','main11','分时段独立用户数');}, 20000);
+          </script>
+          <button type="submit" id="btn_submit1" style="margin-left:600px" onclick="plotChart('hour','line','uniqUserNum','main11','分时段独立用户数')">独立用户数</button>
+          <button type="submit" id="btn_submit2" onclick="plotChart('hour','line','uniqIpNum','main11','分时段独立Ip数')"> 独立Ip数 </button>
+          <button type="submit" id="btn_submit2" onclick="plotChart('hour','line','accessNum','main11','分时段总访问数')"> 总访问数 </button>
+          <center><div id="main12" style="width: 800px;height:400px;"></div></center>
+          <script>
+            plotChart('hour','bar','accessBrowser','main12','不同浏览器访问量');
+            //setInterval(function () {plotChart('hour','bar','accessBrowser','main12','不同浏览器访问量');}, 20000);
+          </script>
+          <button type="submit" id="btn_submit1" style="margin-left:600px" onclick="plotChart('hour','bar','accessBrowser','main12','不同浏览器访问量')">不同浏览器</button>
+          <button type="submit" id="btn_submit2" onclick="plotChart('hour','bar','accessPlatform','main12','不同平台访问量')"> 不同平台 </button>
+          <button type="submit" id="btn_submit3" onclick="plotChart('hour','bar','accessSource','main12','不同来源访问量')"> 不同来源 </button>
+        </div>
+        <!-- div2 -->
+        <div id = 'div2' style="display:none">
+          <center><div id="main21" style="width: 800px;height:400px;"></div></center>
+          <script>
+            plotChart('day','line','hashUserId','main21','分时段独立用户数');
+            //setInterval(function () {plotChart('day','line','hashUserId','main21','分时段独立用户数');}, 20000);
+          </script>
+          <button type="submit" id="btn_submit2" style="margin-left:600px" onclick="plotChart('day','line','hashUserId','main21','分时段独立用户数')"> 独立用户数 </button>
+          <button type="submit" id="btn_submit1" onclick="plotChart('day','line','hashUserIp','main21','分时段独立Ip数')">独立Ip数</button>
+          <button type="submit" id="btn_submit3" onclick="plotChart('day','line','accessNum','main21','分时段总访问数')"> 总访问数 </button>
+          <center><div id="main22" style="width: 800px;height:400px;"></div></center>
+          <script>
+            plotChart('day','bar','accessBrowser','main22','不同浏览器访问量');
+            //setInterval(function () {plotChart('day','bar','accessBrowser','main22','不同浏览器访问量');}, 20000);
+          </script>
+          <button type="submit" id="btn_submit1" style="margin-left:600px" onclick="plotChart('day','bar','accessBrowser','main22','不同浏览器访问量')">不同浏览器</button>
+          <button type="submit" id="btn_submit2" onclick="plotChart('day','bar','accessPlatform','main22','不同平台访问量')"> 不同平台 </button>
+          <button type="submit" id="btn_submit3" onclick="plotChart('day','bar','accessSource','main22','不同来源访问量')"> 不同来源 </button>
+        </div>
+        <script type='text/javascript'>  
+          var sh1 = document.getElementById("showDiv1");
+          sh1.onclick = function() {
+            var div1 = document.getElementById("div1");
+            var div2 = document.getElementById("div2");
+            showHidden(div1);
+            hidden(div2)
+            return false;
+          }
+          var sh2 = document.getElementById("showDiv2");
+          sh2.onclick = function() {
+            var div1 = document.getElementById("div1");
+            var div2 = document.getElementById("div2");
+            hidden(div1)
+            showHidden(div2);
+            return false;
+          }
+          </script>
+    </body>
+</html>
