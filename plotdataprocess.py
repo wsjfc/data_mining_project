@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # -*- coding:UTF-8 -*-
-
 import pymongo as pm
 import datetime
 from collections import Counter

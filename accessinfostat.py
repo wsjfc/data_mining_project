@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # -*- coding:UTF-8 -*-
-
 from preprocess import AccessingData
 import pymongo as pm
 import pandas as pd
@@ -41,23 +40,7 @@ def statInfo(timeInterval):
         oldTime = newTime - datetime.timedelta(hours=1)
         # time向上取整
         accessTime = datetime.datetime(oldTime.year, oldTime.month, oldTime.day, oldTime.hour, 0, 0)
-        statisticData = {
-            # utc format
-            'accessTime':accessTime,
-            'accessNum': accessData.getAccessNumber(),
-            'uniqIpNum': accessData.getUniqueIpNum(),
-            'uniqUserNum': accessData.getUserNum(),
-            'accessSource': [accessData.getAccessSource()],
-            'regionInfo': [accessData.getSite()[0]],
-            'cityInfo': [accessData.getSite()[1]],
-            'accessBrowser': [accessData.getAccessDevice()[0]],
-            'accessPlatform': [accessData.getAccessDevice()[1]],
-            'hashUserIp': accessData.hashData()[0],
-            'hashUserId': accessData.hashData()[1]
-        }
-        client = pm.MongoClient('mongodb://jizhi:pwd123@127.0.0.1:27017/statistic_result')
-        db = client.statistic_result
-        col = db.stat
+        saveInMongodb(accessTime,accessData)
 
     #每天运行一次，统计上一天的数据
     elif timeInterval == 'day':
@@ -69,25 +52,27 @@ def statInfo(timeInterval):
         grouped = rawData.groupby('newdate')
         for accessTime in times:
             accessData = AccessingData(grouped.get_group(accessTime).reset_index(drop=True))
-            #print(accessTime)
-            statisticData = {
-                # utc format
-                'accessTime': accessTime.astype('M8[s]').astype('O'),
-                'accessNum': accessData.getAccessNumber(),
-                'uniqIpNum': accessData.getUniqueIpNum(),
-                'uniqUserNum': accessData.getUserNum(),
-                'accessSource': [accessData.getAccessSource()],
-                'regionInfo': [accessData.getSite()[0]],
-                'cityInfo': [accessData.getSite()[1]],
-                'accessBrowser': [accessData.getAccessDevice()[0]],
-                'accessPlatform': [accessData.getAccessDevice()[1]],
-                'hashUserIp': accessData.hashData()[0],
-                'hashUserId': accessData.hashData()[1]
-            }
-            client = pm.MongoClient('mongodb://jizhi:pwd123@127.0.0.1:27017/statistic_result')
-            db = client.statistic_result
-            col = db.stat
+            accessTime = accessTime.astype('M8[s]').astype('O')
+            saveInMongodb(accessTime,accessData)
 
+def saveInMongodb(accessTime,accessData):
+    statisticData = {
+        # utc format
+        'accessTime': accessTime,
+        'accessNum': accessData.getAccessNumber(),
+        'uniqIpNum': accessData.getUniqueIpNum(),
+        'uniqUserNum': accessData.getUserNum(),
+        'accessSource': [accessData.getAccessSource()],
+        'regionInfo': [accessData.getSite()[0]],
+        'cityInfo': [accessData.getSite()[1]],
+        'accessBrowser': [accessData.getAccessDevice()[0]],
+        'accessPlatform': [accessData.getAccessDevice()[1]],
+        'hashUserIp': accessData.hashData()[0],
+        'hashUserId': accessData.hashData()[1]
+    }
+    client = pm.MongoClient('mongodb://jizhi:pwd123@127.0.0.1:27017/statistic_result')
+    db = client.statistic_result
+    col = db.stat
     # 只插入原有数据库中不存在的数据，避免重复
     if not list(col.find({'accessTime': statisticData['accessTime']})):
         col.insert_one(statisticData)

@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # -*- coding:UTF-8 -*-
-
 from flask import Flask
 from flask import jsonify
 from flask import request

@@ -1,11 +1,12 @@
 # -*- coding: UTF-8 -*-
-
 import pandas as pd
 import numpy as np
 import concurrent.futures
 import pymongo as pm
 import re
 import random
+import hashlib
+import binascii
 
 class AccessingData:
     def __init__(self,data):
@@ -22,12 +23,12 @@ class AccessingData:
         return accessNumber
 
     def getUniqueIpNum(self):
-        uniqueIpNum = len(pd.unique(self.rawData['userip']))
+        uniqueIpNum = len(pd.unique(self.rawData['userip'].dropna()))
 
         return uniqueIpNum
 
     def getUserNum(self):
-        userNum = len(pd.unique(self.rawData['userid']))
+        userNum = len(pd.unique(self.rawData['userid'].dropna()))
 
         return userNum
 
@@ -123,10 +124,10 @@ class AccessingData:
                     count[7] += 1
                     break
 
-        accessDevice = {'windows': count[0], 'linux': count[1], 'mac': count[2], 'mobile': count[3]
-            , 'chrome': count[4], 'ie': count[5], 'firefox': count[6], 'otherBrowser': count[7]}
+        accessplatform = {'windows': count[0], 'linux': count[1], 'mac': count[2], 'mobile': count[3]}
+        accessBrowser = {'chrome': count[4], 'ie': count[5], 'firefox': count[6], 'otherBrowser': count[7]}
 
-        return accessDevice
+        return accessBrowser,accessplatform
 
     def getAccessSource(self):
         baseurls = self.rawData[self.rawData['method'] == 'GET']['baseurl'].dropna().values
@@ -147,12 +148,19 @@ class AccessingData:
                 print(url)
         dropKey = []
         for key in source.keys():
-            if len(key) <3 or key[0]<'9':
+            if len(key) <3 or key[0]<'9': # 不统计过短的域名或以数字开头的域名
                 dropKey.append(key)
         for key in dropKey:
             source.pop(key)
 
         return source
 
+    def hashData(self):
+        hashUserIp = [hashlib.sha1(binascii.a2b_uu(userip.split(':')[-1])).hexdigest() for userip in
+                        list(self.rawData['userip'].values)]                                           # hash userip
+        hashUserId = [hashlib.sha1(binascii.a2b_hex((userid))).hexdigest() for userid in
+                      list(self.rawData['userid'].values) if pd.notna(userid)]                         # hash userid
 
+        # print([index for index in range(len(pd.notna(df['userid']).values)) if pd.notna(df['userid']).values[index]])
 
+        return hashUserIp,hashUserId
