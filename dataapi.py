@@ -34,4 +34,4 @@ def getData():
     return jsonify({'accessTime': output['accessTime'], 'data': accessNumDictArray, 'legend': [data['name'] for data in output['data']]})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port='5000',debug=True)
+    app.run(host='0.0.0.0',port=5000,debug=True)
