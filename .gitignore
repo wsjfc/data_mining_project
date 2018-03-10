@@ -36,6 +36,7 @@ temp-plot.html
 venv/
 RECOVERED_FILES/
 MANIFEST
+project.md
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
