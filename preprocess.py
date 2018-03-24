@@ -159,7 +159,7 @@ class AccessingData:
         hashUserIp = [hashlib.sha1(binascii.a2b_uu(userip.split(':')[-1])).hexdigest() for userip in
                         list(self.rawData['userip'].values)]                                           # hash userip
         hashUserId = [hashlib.sha1(binascii.a2b_hex((userid))).hexdigest() for userid in
-                      list(self.rawData['userid'].values) if pd.notna(userid)]                         # hash userid
+                      list(self.rawData['userid'].values) if pd.notna(userid) and userid != 'na']      # hash userid
 
         # print([index for index in range(len(pd.notna(df['userid']).values)) if pd.notna(df['userid']).values[index]])
 

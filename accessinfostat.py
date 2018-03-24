@@ -46,7 +46,7 @@ def statInfo(timeInterval):
     elif timeInterval == 'day':
         rawData = readMongo('day')
         # 对时间向上取整
-        rawData['newdate'] = rawData['date'].apply(lambda dt: datetime.datetime(dt.year, dt.month, dt.day, dt.hour,0 ,0))
+        rawData['newdate'] = rawData['date'].apply(lambda dt: datetime.datetime(dt.year, dt.month, dt.day, dt.hour,0 ,0)) #以小时为间隔统计
         # utc format
         times = list(pd.unique(rawData['newdate']))
         grouped = rawData.groupby('newdate')
