@@ -23,6 +23,7 @@ def statsByHour():
                             {'$sort': {'accessTime': 1}}])
 
         output = list(s)
+        # utc+8 time
         accessTime = [a['accessTime'] for a in output]
         if keyword in ['regionInfo', 'cityInfo', 'accessBrowser', 'accessPlatform', 'accessSource']:
             processedData = dateProcess1(keyword, output, accessTime)
@@ -49,7 +50,7 @@ def statsByDay():
     for keyword in ['regionInfo', 'cityInfo', 'accessBrowser', 'accessPlatform', 'accessSource',
                     'accessNum', 'hashUserIp', 'hashUserId']:
         if keyword in ['hashUserIp', 'hashUserId']:
-            s = stat.aggregate([{'$match': {'accessTime': {'$lte': latestDate2, '$gt': latestDate1}}},
+            s = stat.aggregate([{'$match': {'accessTime': {'$lt': latestDate2, '$gte': latestDate1}}},
                                 {'$unwind': '$' + keyword},
                                 {'$group': {'_id': {'$dateToString': {'format': '%Y-%m-%d', 'date': '$accessTime',
                                                                       'timezone': '+08:00'}},
@@ -63,18 +64,19 @@ def statsByDay():
             #print(processedData)
 
         elif keyword in ['accessNum']:
-            s = stat.aggregate([{'$match': {'accessTime': {'$lte': latestDate2, '$gt': latestDate1}}},
+            s = stat.aggregate([{'$match': {'accessTime': {'$lt': latestDate2, '$gte': latestDate1}}},
                                 {'$group': {'_id': {'$dateToString': {'format': '%Y-%m-%d', 'date': '$accessTime',
                                                                       'timezone': '+08:00'}},
                                             keyword: {'$sum': '$' + keyword}}},
                                 {'$sort': {'_id': 1}}])
             output = list(s)
+            # utc+8 time
             accessTime = [a['_id'] for a in output]
             processedData = dateProcess2(keyword, output, accessTime)
             #print(processedData)
 
         else:
-            s = stat.aggregate([{'$match':{'accessTime':{'$lte':latestDate2,'$gt':latestDate1}}},
+            s = stat.aggregate([{'$match':{'accessTime':{'$lt':latestDate2,'$gte':latestDate1}}},
                                 {'$project': {'_id': 0, keyword: 1, 'accessTime': {
                                     '$dateToString': {'format': '%Y-%m-%d', 'date': '$accessTime',
                                                       'timezone': '+08:00'}}}},
@@ -141,7 +143,8 @@ def dateProcess1(keyword,output,accessTime):
     accessNumDictArray = [{'name': key, 'data': accessNumDict[key],
                            } for key in accessNumDict.keys()]
     try:
-        timeId = datetime.datetime.strptime(accessTime[-1],"%Y-%m-%d %H:%M") - datetime.timedelta(hours=8)
+        # utc+8 time
+        timeId = datetime.datetime.strptime(accessTime[-1],"%Y-%m-%d %H:%M")
     except:
         timeId = datetime.datetime.strptime(accessTime[-1],"%Y-%m-%d")
 
@@ -157,7 +160,8 @@ def dateProcess2(keyword,output,accessTime):
         name = keyword
     accessNumDictArray = [{'data': [a[keyword] for a in output],'name': name}]
     try:
-        timeId = datetime.datetime.strptime(accessTime[-1],"%Y-%m-%d %H:%M")- datetime.timedelta(hours=8)
+        #utc+8 time
+        timeId = datetime.datetime.strptime(accessTime[-1],"%Y-%m-%d %H:%M")
     except:
         timeId = datetime.datetime.strptime(accessTime[-1],"%Y-%m-%d")
 
